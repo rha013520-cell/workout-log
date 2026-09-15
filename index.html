@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>운동 기록</title>
+
+<!-- PWA / iOS 홈화면 설정 -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="운동 기록">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main class="wrap">
+  <header class="header">
+    <h1>운동 기록</h1>
+    <p class="sub" id="entryCount"></p>
+  </header>
+
+  <form id="logForm" class="log-form">
+    <div class="field">
+      <label for="date">날짜</label>
+      <input type="date" id="date" required>
+    </div>
+
+    <div class="field">
+      <label for="exercise">운동 종류</label>
+      <input type="text" id="exercise" placeholder="예: 벤치프레스" required autocomplete="off">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="reps">횟수</label>
+        <input type="number" id="reps" placeholder="0" min="0" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="duration">시간(분)</label>
+        <input type="number" id="duration" placeholder="0" min="0" inputmode="numeric">
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary">기록하기</button>
+  </form>
+
+  <section id="list" class="list"></section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
