@@ -34,7 +34,8 @@
 
     <div class="field">
       <label for="exercise">운동 종류</label>
-      <input type="text" id="exercise" placeholder="예: 벤치프레스" required autocomplete="off">
+      <input type="text" id="exercise" placeholder="예: 벤치프레스" required autocomplete="off" list="exerciseSuggestions">
+      <datalist id="exerciseSuggestions"></datalist>
     </div>
 
     <div class="field-row">
@@ -48,11 +49,21 @@
       </div>
     </div>
 
+    <div class="field">
+      <label for="photo">인증사진 (선택)</label>
+      <input type="file" id="photo" accept="image/*" capture="environment">
+    </div>
+
     <button type="submit" class="btn-primary">기록하기</button>
   </form>
 
   <section id="list" class="list"></section>
 </main>
+
+<div id="photoModal" class="photo-modal hidden">
+  <button id="photoModalClose" class="photo-modal-close" aria-label="닫기">✕</button>
+  <img id="photoModalImg" src="" alt="인증사진 확대">
+</div>
 
 <script src="app.js"></script>
 </body>
