@@ -24,6 +24,11 @@
   <header class="header">
     <h1>운동 기록</h1>
     <p class="sub" id="entryCount"></p>
+    <div class="backup-row">
+      <button type="button" id="exportBtn" class="btn-text">내보내기</button>
+      <label for="importFile" class="btn-text">가져오기</label>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
   </header>
 
   <form id="logForm" class="log-form">

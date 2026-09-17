@@ -47,6 +47,24 @@ body{
   min-height:18px;
 }
 
+.backup-row{
+  display:flex;
+  gap:14px;
+  margin-top:10px;
+}
+
+.btn-text{
+  font-size:13px;
+  font-weight:500;
+  color:var(--accent);
+  background:none;
+  border:none;
+  padding:0;
+  cursor:pointer;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+
 /* 입력 폼 */
 .log-form{
   padding-bottom:28px;

@@ -14,6 +14,8 @@ const suggestionsEl = document.getElementById('exerciseSuggestions');
 const photoModal = document.getElementById('photoModal');
 const photoModalImg = document.getElementById('photoModalImg');
 const photoModalClose = document.getElementById('photoModalClose');
+const exportBtn = document.getElementById('exportBtn');
+const importFile = document.getElementById('importFile');
 
 // 오늘 날짜를 기본값으로
 dateInput.value = new Date().toISOString().slice(0, 10);
@@ -286,6 +288,46 @@ form.addEventListener('submit', async (e) => {
 });
 
 render();
+
+// ---------- 백업(내보내기) / 복원(가져오기) ----------
+// 참고: 사진은 용량이 커서 이 백업에는 포함되지 않고, 텍스트 기록만 저장돼요.
+
+exportBtn.addEventListener('click', () => {
+  const entries = loadEntries();
+  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `운동기록_백업_${today}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+importFile.addEventListener('change', () => {
+  const file = importFile.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!Array.isArray(imported)) throw new Error('invalid format');
+
+      const existing = loadEntries();
+      const existingIds = new Set(existing.map((en) => en.id));
+      const merged = [...existing, ...imported.filter((en) => !existingIds.has(en.id))];
+
+      saveEntries(merged);
+      render();
+      alert(`${imported.length}개 기록을 불러왔어요.`);
+    } catch (err) {
+      alert('파일을 읽을 수 없어요. 올바른 백업 파일인지 확인해주세요.');
+    }
+    importFile.value = '';
+  };
+  reader.readAsText(file);
+});
 
 // 오프라인 지원을 위한 서비스워커 등록
 if ('serviceWorker' in navigator) {
