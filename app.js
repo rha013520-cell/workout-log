@@ -16,6 +16,10 @@ const photoModalImg = document.getElementById('photoModalImg');
 const photoModalClose = document.getElementById('photoModalClose');
 const exportBtn = document.getElementById('exportBtn');
 const importFile = document.getElementById('importFile');
+const submitBtn = document.getElementById('submitBtn');
+const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+let editingId = null;
 
 // 오늘 날짜를 기본값으로
 dateInput.value = new Date().toISOString().slice(0, 10);
@@ -157,10 +161,44 @@ function updateSuggestions(entries) {
     .join('');
 }
 
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
+
+function renderStats(entries) {
+  const statsEl = document.getElementById('stats');
+
+  if (entries.length === 0) {
+    statsEl.innerHTML = '';
+    return;
+  }
+
+  const counts = {};
+  for (const e of entries) {
+    counts[e.exercise] = (counts[e.exercise] || 0) + 1;
+  }
+
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const max = sorted[0][1];
+
+  const rows = sorted.map(([name, count]) => `
+    <div class="stats-row">
+      <div class="stats-label">${escapeHtml(name)}</div>
+      <div class="stats-bar-track"><div class="stats-bar-fill" style="width:${(count / max) * 100}%"></div></div>
+      <div class="stats-count">${count}회</div>
+    </div>
+  `).join('');
+
+  statsEl.innerHTML = `<div class="stats-title">많이 한 운동 TOP ${sorted.length}</div>${rows}`;
+}
+
 function render() {
   const entries = loadEntries();
 
   updateSuggestions(entries);
+  renderStats(entries);
   countEl.textContent = entries.length > 0 ? `총 ${entries.length}개 기록` : '';
 
   if (entries.length === 0) {
@@ -220,14 +258,25 @@ function render() {
       main.appendChild(exerciseEl);
       main.appendChild(detailEl);
 
+      const editBtn = document.createElement('button');
+      editBtn.className = 'entry-edit';
+      editBtn.setAttribute('aria-label', '기록 수정');
+      editBtn.textContent = '✎';
+      editBtn.addEventListener('click', () => startEdit(entry));
+
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'entry-delete';
       deleteBtn.setAttribute('aria-label', '기록 삭제');
       deleteBtn.textContent = '✕';
       deleteBtn.addEventListener('click', () => deleteEntry(entry.id));
 
+      const actions = document.createElement('div');
+      actions.className = 'entry-actions';
+      actions.appendChild(editBtn);
+      actions.appendChild(deleteBtn);
+
       row.appendChild(main);
-      row.appendChild(deleteBtn);
+      row.appendChild(actions);
       group.appendChild(row);
     }
 
@@ -237,6 +286,29 @@ function render() {
   loadThumbnails(entries);
 }
 
+function startEdit(entry) {
+  editingId = entry.id;
+  dateInput.value = entry.date;
+  exerciseInput.value = entry.exercise;
+  repsInput.value = entry.reps || '';
+  durationInput.value = entry.duration || '';
+  photoInput.value = '';
+  submitBtn.textContent = '수정 완료';
+  cancelEditBtn.hidden = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  exerciseInput.focus();
+}
+
+function cancelEdit() {
+  editingId = null;
+  form.reset();
+  dateInput.value = new Date().toISOString().slice(0, 10);
+  submitBtn.textContent = '기록하기';
+  cancelEditBtn.hidden = true;
+}
+
+cancelEditBtn.addEventListener('click', cancelEdit);
+
 function deleteEntry(id) {
   const entries = loadEntries();
   const target = entries.find((e) => e.id === id);
@@ -245,6 +317,7 @@ function deleteEntry(id) {
   if (target && target.hasPhoto) {
     deletePhoto(id).catch(() => {});
   }
+  if (editingId === id) cancelEdit();
   render();
 }
 
@@ -252,20 +325,48 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const photoFile = photoInput.files[0];
+  const exerciseValue = exerciseInput.value.trim();
+  if (!exerciseValue) return;
+
+  const entries = loadEntries();
+
+  if (editingId) {
+    const idx = entries.findIndex((en) => en.id === editingId);
+    if (idx !== -1) {
+      entries[idx] = {
+        ...entries[idx],
+        date: dateInput.value,
+        exercise: exerciseValue,
+        reps: repsInput.value ? Number(repsInput.value) : null,
+        duration: durationInput.value ? Number(durationInput.value) : null,
+        hasPhoto: photoFile ? true : entries[idx].hasPhoto,
+      };
+      saveEntries(entries);
+
+      if (photoFile) {
+        try {
+          const blob = await compressImage(photoFile);
+          await savePhoto(editingId, blob);
+        } catch (err) {
+          // 사진 저장 실패해도 기록 자체는 유지
+        }
+      }
+    }
+    cancelEdit();
+    render();
+    return;
+  }
 
   const entry = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     date: dateInput.value,
-    exercise: exerciseInput.value.trim(),
+    exercise: exerciseValue,
     reps: repsInput.value ? Number(repsInput.value) : null,
     duration: durationInput.value ? Number(durationInput.value) : null,
     createdAt: Date.now(),
     hasPhoto: !!photoFile,
   };
 
-  if (!entry.exercise) return;
-
-  const entries = loadEntries();
   entries.push(entry);
   saveEntries(entries);
 
