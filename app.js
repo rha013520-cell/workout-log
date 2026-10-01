@@ -5,8 +5,12 @@ const PHOTO_STORE = 'photos';
 const form = document.getElementById('logForm');
 const dateInput = document.getElementById('date');
 const exerciseInput = document.getElementById('exercise');
+const weightInput = document.getElementById('weight');
+const setsInput = document.getElementById('sets');
 const repsInput = document.getElementById('reps');
 const durationInput = document.getElementById('duration');
+const distanceInput = document.getElementById('distance');
+const elevationInput = document.getElementById('elevation');
 const photoInput = document.getElementById('photo');
 const listEl = document.getElementById('list');
 const countEl = document.getElementById('entryCount');
@@ -167,6 +171,15 @@ function escapeHtml(str) {
   }[ch]));
 }
 
+// 그래프 집계용: "체스트 프레스 10kg (3세트 × 10회)" → "체스트 프레스"
+// 목록 표시에는 영향 없음, 그래프 집계에만 쓰임
+function normalizeExerciseName(name) {
+  let base = name.replace(/\([^)]*\)/g, '');
+  base = base.replace(/[0-9]+(\.[0-9]+)?\s*(kg|km|m|cm|회|분|초|세트)/gi, '');
+  base = base.replace(/\s{2,}/g, ' ').trim();
+  return base || name.trim();
+}
+
 function renderStats(entries) {
   const statsEl = document.getElementById('stats');
 
@@ -177,7 +190,8 @@ function renderStats(entries) {
 
   const counts = {};
   for (const e of entries) {
-    counts[e.exercise] = (counts[e.exercise] || 0) + 1;
+    const key = normalizeExerciseName(e.exercise);
+    counts[key] = (counts[key] || 0) + 1;
   }
 
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
@@ -248,7 +262,11 @@ function render() {
       exerciseEl.textContent = entry.exercise;
 
       const detailParts = [];
+      if (entry.weight) detailParts.push(`${entry.weight}kg`);
+      if (entry.sets) detailParts.push(`${entry.sets}세트`);
       if (entry.reps) detailParts.push(`${entry.reps}회`);
+      if (entry.distance) detailParts.push(`${entry.distance}km`);
+      if (entry.elevation) detailParts.push(`고도 ${entry.elevation}m`);
       if (entry.duration) detailParts.push(`${entry.duration}분`);
 
       const detailEl = document.createElement('div');
@@ -290,8 +308,12 @@ function startEdit(entry) {
   editingId = entry.id;
   dateInput.value = entry.date;
   exerciseInput.value = entry.exercise;
+  weightInput.value = entry.weight || '';
+  setsInput.value = entry.sets || '';
   repsInput.value = entry.reps || '';
   durationInput.value = entry.duration || '';
+  distanceInput.value = entry.distance || '';
+  elevationInput.value = entry.elevation || '';
   photoInput.value = '';
   submitBtn.textContent = '수정 완료';
   cancelEditBtn.hidden = false;
@@ -337,8 +359,12 @@ form.addEventListener('submit', async (e) => {
         ...entries[idx],
         date: dateInput.value,
         exercise: exerciseValue,
+        weight: weightInput.value ? Number(weightInput.value) : null,
+        sets: setsInput.value ? Number(setsInput.value) : null,
         reps: repsInput.value ? Number(repsInput.value) : null,
         duration: durationInput.value ? Number(durationInput.value) : null,
+        distance: distanceInput.value ? Number(distanceInput.value) : null,
+        elevation: elevationInput.value ? Number(elevationInput.value) : null,
         hasPhoto: photoFile ? true : entries[idx].hasPhoto,
       };
       saveEntries(entries);
@@ -361,8 +387,12 @@ form.addEventListener('submit', async (e) => {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     date: dateInput.value,
     exercise: exerciseValue,
+    weight: weightInput.value ? Number(weightInput.value) : null,
+    sets: setsInput.value ? Number(setsInput.value) : null,
     reps: repsInput.value ? Number(repsInput.value) : null,
     duration: durationInput.value ? Number(durationInput.value) : null,
+    distance: distanceInput.value ? Number(distanceInput.value) : null,
+    elevation: elevationInput.value ? Number(elevationInput.value) : null,
     createdAt: Date.now(),
     hasPhoto: !!photoFile,
   };
@@ -380,8 +410,12 @@ form.addEventListener('submit', async (e) => {
   }
 
   exerciseInput.value = '';
+  weightInput.value = '';
+  setsInput.value = '';
   repsInput.value = '';
   durationInput.value = '';
+  distanceInput.value = '';
+  elevationInput.value = '';
   photoInput.value = '';
   exerciseInput.focus();
 
